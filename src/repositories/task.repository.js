@@ -16,6 +16,7 @@ const create_task_repo = async (data) => {
 };
 
 const getAll_repo = (date) => {
+
   const startDate = new Date(date);
   startDate.setHours(0, 0, 0, 0);
   const endDate = new Date(date);
@@ -70,5 +71,7 @@ const getAll_repo = (date) => {
     },
   ]);
 };
-
-export { create_task_repo, getAll_repo };
+const deleteTask_repo=(id)=>{
+return Task_model.deleteOne({_id:id})
+}
+export { create_task_repo, getAll_repo ,deleteTask_repo};
