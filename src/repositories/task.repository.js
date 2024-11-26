@@ -15,4 +15,60 @@ const create_task_repo = async (data) => {
   return Data.save();
 };
 
-export { create_task_repo };
+const getAll_repo = (date) => {
+  const startDate = new Date(date);
+  startDate.setHours(0, 0, 0, 0);
+  const endDate = new Date(date);
+  endDate.setHours(23, 59, 59, 999);
+
+  return Task_model.aggregate([
+    {
+      $lookup: {
+        from: "datas",
+        localField: "datas",
+        foreignField: "_id",
+        as: "datas",
+      },
+    },
+    {
+      $addFields: {
+        datas: {
+          $filter: {
+            input: "$datas",
+            as: "data",
+            cond: {
+              $and: [
+                { $gte: ["$$data.due_date", startDate] },
+                { $lte: ["$$data.due_date", endDate] },
+              ],
+            },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        datas: {
+          $sortArray: {
+            input: "$datas",
+            sortBy: { due_date: -1 },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        datas: {
+          $slice: ["$datas", 1],
+        },
+      },
+    },
+    {
+      $match: {
+        $expr: { $gt: [{ $size: "$datas" }, 0] },
+      },
+    },
+  ]);
+};
+
+export { create_task_repo, getAll_repo };
