@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Task_model from "../models/task.model.js";
 import { create_data_repo } from "./data.repository.js";
 
@@ -16,7 +17,6 @@ const create_task_repo = async (data) => {
 };
 
 const getAll_repo = (date) => {
-
   const startDate = new Date(date);
   startDate.setHours(0, 0, 0, 0);
   const endDate = new Date(date);
@@ -71,7 +71,65 @@ const getAll_repo = (date) => {
     },
   ]);
 };
-const deleteTask_repo=(id)=>{
-return Task_model.deleteOne({_id:id})
-}
-export { create_task_repo, getAll_repo ,deleteTask_repo};
+const task_detail_repo = (id) => {
+  id = new mongoose.Types.ObjectId(id);
+  return Task_model.aggregate([
+    {
+      $match: {
+        _id: id,
+      },
+    },
+    {
+      $lookup: {
+        from: "datas",
+        localField: "datas",
+        foreignField: "_id",
+        as: "datas",
+      },
+    },
+  ]);
+};
+const deleteTask_repo = (id) => {
+  return Task_model.deleteOne({ _id: id });
+};
+const next_occurrence_repo = (id) => {
+  id = new mongoose.Types.ObjectId(id);
+  return Task_model.aggregate([
+    {
+      $match: {
+        _id: id,
+      },
+    },
+    {
+      $lookup: {
+        from: "datas",
+        localField: "datas",
+        foreignField: "_id",
+        as: "datas",
+      },
+    },
+    {
+      $addFields: {
+        datas: {
+          $sortArray: {
+            input: "$datas",
+            sortBy: { due_date: -1 },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        due_date: { $arrayElemAt: ["$datas.due_date", 0] },
+        pattern:"$pattern"
+      },
+    },
+  ]);
+};
+export {
+  create_task_repo,
+  getAll_repo,
+  deleteTask_repo,
+  task_detail_repo,
+  next_occurrence_repo,
+};
