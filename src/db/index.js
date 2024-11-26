@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 const connectDB = async () => {
   try {
     const connectionInstance = await mongoose.connect(
-      `${process.env.db_url}/Task_SchRecurring`
+      `${process.env.db_url}/Task_Recurring`
     );
     console.log(
       `Mongodb connected DB host:${connectionInstance.connection.host}`
