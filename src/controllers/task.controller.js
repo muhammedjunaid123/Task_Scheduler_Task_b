@@ -1,3 +1,4 @@
+import { update_repo } from "../repositories/data.repository.js";
 import {
   create_task_repo,
   getAll_repo,
@@ -17,5 +18,10 @@ const getAll = asyncHandler(async (req, res) => {
     res.json(new apiResponse(200, result));
   }
 });
-
-export { create_task, getAll };
+const update=asyncHandler(async(req,res)=>{
+ const result=await update_repo(req.body)
+ if(result){
+    res.json(new apiResponse(200, [], "task updated successfully"));
+ }
+})
+export { create_task, getAll ,update};

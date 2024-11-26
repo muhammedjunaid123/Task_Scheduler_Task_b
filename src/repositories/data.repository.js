@@ -7,4 +7,9 @@ const create_data_repo = (due_date) => {
   });
 };
 
-export { create_data_repo };
+const update_repo = (data) => {
+  const { id, status } = data;
+return  Data_model.findByIdAndUpdate({_id:id},{$set:{status:status}})
+ 
+};
+export { create_data_repo,update_repo };
