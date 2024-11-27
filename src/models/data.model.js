@@ -18,6 +18,10 @@ const dataSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  email_send:{
+    type: Boolean,
+    default: false
+  },
   foreign_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Task",

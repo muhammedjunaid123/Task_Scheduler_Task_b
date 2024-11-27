@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { now } from "mongoose";
 import Task_model from "../models/task.model.js";
 import { create_data_repo } from "./data.repository.js";
 
@@ -194,6 +194,64 @@ const update_task_recreate_repo = async (id, due_date, create_date) => {
   Data.foreign_id = id;
   return Data.save();
 };
+const reminder_task_repo = async () => {
+  let today = new Date();
+  let after = new Date(today.getTime() + 30 * 60000);
+  return await Task_model.aggregate([
+    {
+      $lookup: {
+        from: "datas",
+        localField: "datas",
+        foreignField: "_id",
+        as: "datas",
+      },
+    },
+    {
+      $addFields: {
+        datas: {
+          $slice: [
+            {
+              $sortArray: {
+                input: "$datas",
+                sortBy: { due_date: -1 },
+              },
+            },
+            1,
+          ],
+        },
+      },
+    },
+    {
+      $addFields: {
+        datas: {
+          $filter: {
+            input: "$datas",
+            as: "data",
+            cond: {
+              $and: [
+                {
+                  $lte: ["$$data.due_date", after],
+                },
+                { $gte: ["$$data.due_date", today] },
+              ],
+            },
+          },
+        },
+      },
+    },
+    {
+      $match: {
+        datas: { $ne: [] },
+      },
+    },
+    {
+      $match: {
+        "datas.email_send": false,
+      },
+    },
+  ]);
+};
+
 export {
   create_task_repo,
   getAll_repo,
@@ -202,4 +260,5 @@ export {
   next_occurrence_repo,
   recreate_repo,
   update_task_recreate_repo,
+  reminder_task_repo,
 };

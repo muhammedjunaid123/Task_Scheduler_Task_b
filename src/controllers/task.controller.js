@@ -1,6 +1,8 @@
-import { errorHandler } from "../middlewares/error.middleware.js";
+import nodemailer from "nodemailer";
+
 import {
   deleteData_repo,
+  update_email_repo,
   update_repo,
 } from "../repositories/data.repository.js";
 import {
@@ -9,6 +11,7 @@ import {
   getAll_repo,
   next_occurrence_repo,
   recreate_repo,
+  reminder_task_repo,
   task_detail_repo,
   update_task_recreate_repo,
 } from "../repositories/task.repository.js";
@@ -22,7 +25,7 @@ const create_task = asyncHandler(async (req, res) => {
   }
 });
 const getAll = asyncHandler(async (req, res) => {
-  const result = await getAll_repo(req.query.date,req.query.search);
+  const result = await getAll_repo(req.query.date, req.query.search);
   if (result) {
     res.json(new apiResponse(200, result));
   }
@@ -84,6 +87,70 @@ const recreate = async (req, res) => {
     console.log(error, "err");
   }
 };
+const email_send = async () => {
+  try {
+    let result = await reminder_task_repo();
+    console.log(result, "result");
+
+    for (let i = 0; i < result.length; i++) {
+      console.log(result[i]);
+
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        requireTLS: true,
+        auth: {
+          user: process.env.DEV_MAIL,
+          pass: process.env.DEV_PASS,
+        },
+      });
+
+      const mailOption = {
+        to: process.env.email,
+        from: "task@gmail.com",
+        subject: "task reminder",
+        text: "task",
+        html: `<table style="max-width: 600px; margin: 0 auto; padding: 20px;">
+  <tr>
+      <td style="text-align: center; background-color: #000; padding: 10px; color: #fff;">
+          <h1>Task Reminder: last Minutes Left!</h1>
+      </td>
+  </tr>
+  <tr>
+      <td style="padding: 20px;">
+          <p>Hello</p>
+          <p>This is a reminder that your task is due in last minutes. Please make sure to complete it before the due time.</p>
+          <p><strong>Task Name:</strong> ${result[i]["name"]}</p>
+          <p><strong>Due Date:</strong> ${result[i]["datas"][0]["due_date"]}</p>
+          <p>We encourage you to finish the task as soon as possible to stay on track with your schedule.</p>
+
+          <p>Thank you for staying on top of your tasks!</p>
+          <p>Best regards,<br>Jchatapp Team</p>
+      </td>
+  </tr>
+  <tr>
+      <td style="text-align: center; background-color: #000; padding: 10px; color: #fff;">
+          <p>&copy; ${new Date().getFullYear()} taskTeam. All rights reserved.</p>
+      </td>
+  </tr>
+</table>
+`,
+      };
+
+      await transporter.sendMail(mailOption, async (err, info) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("Email has been sent:");
+          await update_email_repo(result[i]["datas"][0]["_id"]);
+        }
+      });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
 export {
   create_task,
   getAll,
@@ -92,4 +159,5 @@ export {
   task_detail,
   next_occurrence,
   recreate,
+  email_send,
 };
