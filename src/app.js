@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware.js";
-
+import job from "./job.js";
 dotenv.config({
   path: "./.env",
 });

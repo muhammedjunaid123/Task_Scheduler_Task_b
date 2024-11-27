@@ -1,3 +1,4 @@
+import { errorHandler } from "../middlewares/error.middleware.js";
 import {
   deleteData_repo,
   update_repo,
@@ -7,7 +8,9 @@ import {
   deleteTask_repo,
   getAll_repo,
   next_occurrence_repo,
+  recreate_repo,
   task_detail_repo,
+  update_task_recreate_repo,
 } from "../repositories/task.repository.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -19,7 +22,7 @@ const create_task = asyncHandler(async (req, res) => {
   }
 });
 const getAll = asyncHandler(async (req, res) => {
-  const result = await getAll_repo(req.query.date);
+  const result = await getAll_repo(req.query.date,req.query.search);
   if (result) {
     res.json(new apiResponse(200, result));
   }
@@ -51,11 +54,36 @@ const next_occurrence = asyncHandler(async (req, res) => {
   } else if (result[0]["pattern"] == "weekly") {
     next.setDate(next.getDate() + 7);
   } else if (result[0]["pattern"] == "monthly") {
-    next.setDate(next.getDate() + 30);
+    next.setMonth(next.getMonth() + 1);
   }
 
   res.json(new apiResponse(200, next));
 });
+
+const recreate = async (req, res) => {
+  try {
+    let task = await recreate_repo();
+    console.log(task);
+    for (let t of task) {
+      let due_date = new Date(t["due_date"]);
+      let create_date = new Date(t["create"]);
+      let diff = due_date - create_date;
+      let next = new Date(t["due_date"]);
+
+      if (t["pattern"] == "daily") {
+        next.setDate(next.getDate() + 1);
+      } else if (t["pattern"] == "weekly") {
+        next.setDate(next.getDate() + 7);
+      } else if (t["pattern"] == "monthly") {
+        next.setMonth(next.getMonth() + 1);
+      }
+      due_date = new Date(next.getTime() + diff);
+      await update_task_recreate_repo(t._id, due_date, next);
+    }
+  } catch (error) {
+    console.log(error, "err");
+  }
+};
 export {
   create_task,
   getAll,
@@ -63,4 +91,5 @@ export {
   deleteTask,
   task_detail,
   next_occurrence,
+  recreate,
 };
